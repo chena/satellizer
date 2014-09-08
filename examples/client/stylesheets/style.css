@@ -285,6 +285,17 @@ a {
   background-color: #303030;
 }
 
+.btn-hackerschool {
+  color: #fff;
+  background-color: #61ae24;
+}
+
+.btn-hackerschool:hover,
+.btn-hackerschool:focus {
+  color: #fff;
+  background-color: #53961f;
+}
+
 /*********************
 * Animations
 *********************/
