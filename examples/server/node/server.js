@@ -27,7 +27,8 @@ var userSchema = new mongoose.Schema({
   google: String,
   github: String,
   linkedin: String,
-  twitter: String
+  twitter: String,
+  hackerschool: String
 });
 
 userSchema.pre('save', function(next) {
@@ -175,6 +176,46 @@ app.post('/auth/signup', function(req, res) {
 
 /*
  |--------------------------------------------------------------------------
+ | Login with Hacker School
+ |--------------------------------------------------------------------------
+ */
+ app.post('/auth/hackerschool', function(req, res) {
+    var accessTokenUrl = 'https://www.hackerschool.com/oauth/token';
+    var peopleApiUrl = 'https://www.hackerschool.com/api/v1/people/me';
+
+    var params = {
+      client_id: req.body.clientId,
+      redirect_uri: req.body.redirectUri,
+      client_secret: config.HS_SECRET,
+      code: req.body.code,
+      grant_type: 'authorization_code'
+    };
+
+    // Step 1. Exchange authorization code for access token.
+    request.post(accessTokenUrl, {json: true, form: params}, function(err, response, token) {
+      var accessToken = token.access_token;
+      var headers = { Authorization: 'Bearer ' + accessToken };
+
+      // Step 2. Retrieve profile information about the current user.
+      request.get({ url: peopleApiUrl, headers: headers, json: true }, function(err, response, profile) {
+        User.findOne({ hackerschool: profile.id }, function(err, existingUser) {
+          // Step 3b. Create a new user account or return an existing one.
+          if (existingUser) {
+            return res.send({ token: createToken(req, existingUser) });
+          }
+          var user = new User();
+          user.hackerschool = profile.id;
+          user.displayName = profile.first_name + ' ' + profile.last_name;
+          user.save(function(err) {
+            res.send({ token: createToken(req, user) });
+          });
+        });
+      });
+    });
+ });
+
+/*
+ |--------------------------------------------------------------------------
  | Login with Google
  |--------------------------------------------------------------------------
  */
@@ -263,7 +304,6 @@ app.post('/auth/github', function(req, res) {
 
     // Step 2. Retrieve profile information about the current user.
     request.get({ url: userApiUrl, qs: accessToken, headers: headers, json: true }, function(err, response, profile) {
-
       // Step 3a. If user is already signed in then link accounts.
       if (req.headers.authorization) {
         User.findOne({ github: profile.id }, function(err, existingUser) {
@@ -335,7 +375,6 @@ app.post('/auth/linkedin', function(req, res) {
 
     // Step 2. Retrieve profile information about the current user.
     request.get({ url: peopleApiUrl, qs: params, json: true }, function(err, response, profile) {
-
       // Step 3a. If user is already signed in then link accounts.
       if (req.headers.authorization) {
         User.findOne({ linkedin: profile.id }, function(err, existingUser) {
