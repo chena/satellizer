@@ -21,6 +21,16 @@
       tokenPrefix: 'satellizer',
       unlinkUrl: '/auth/unlink/',
       providers: {
+        hackerschool: {
+          url: '/auth/hackerschool',
+          authorizationEndpoint: 'https://www.hackerschool.com/oauth/authorize',
+          redirectUri: window.location.origin,
+          scope: [],
+          scopeDelimiter: ' ',
+          display: 'popup',
+          type: '2.0',
+          popupOptions: { width: 1000, height: 500 }
+        },
         google: {
           url: '/auth/google',
           authorizationEndpoint: 'https://accounts.google.com/o/oauth2/auth',
